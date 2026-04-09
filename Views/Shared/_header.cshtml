@@ -1,0 +1,194 @@
+﻿@{
+    string controller = HttpContext.Current.Request.RequestContext.RouteData.Values["controller"].ToString().ToLower();
+    string action = HttpContext.Current.Request.RequestContext.RouteData.Values["action"].ToString().ToLower();
+    bool search = Session["Search"] != null ? (bool)Session["Search"] : false;
+    string searchString = Session["SearchString"] != null ? (string)Session["SearchString"] : "";
+    int currentMediaId = Session["CurrentMediaId"] != null ? (int)Session["CurrentMediaId"] : 0;
+    string currentMediaTitle = Session["CurrentMediaTitle"] != null ? (string)Session["CurrentMediaTitle"] : "";
+    string selectedCategory = Session["SelectedCategory"] != null ? (string)Session["SelectedCategory"] : "";
+    string selectedOwnerId = Session["SelectedOwnerId"] != null ? Session["SelectedOwnerId"].ToString() : "0";
+
+    var Categories = (List<string>)Session["Categories"];
+
+    var mediaSortBy = Session["MediaSortBy"] != null ? (Models.MediaSortBy)Session["MediaSortBy"] : Models.MediaSortBy.PublishDate;
+    bool SearchAscending = Session["SortAscending"] != null ? (bool)Session["SortAscending"] : false;
+
+    string checkSortByTitle = mediaSortBy == Models.MediaSortBy.Title ? "fa-check" : "";
+    string checkSortByDate = mediaSortBy == Models.MediaSortBy.PublishDate ? "fa-check" : "";
+    string checkSortByLikes = mediaSortBy == Models.MediaSortBy.Likes ? "fa-check" : "";
+
+    string iconSortBy = "";
+    string iconSortByTitle = "";
+
+    switch (mediaSortBy)
+    {
+        case Models.MediaSortBy.Title:
+            iconSortBy = "fa-solid fa-t";
+            iconSortByTitle = "Tri des vidéos par titre";
+            break;
+        case Models.MediaSortBy.PublishDate:
+            iconSortBy = "fa-regular fa-calendar";
+            iconSortByTitle = "Tri des vidéos par date de publication";
+            break;
+        case Models.MediaSortBy.Likes:
+            iconSortBy = "fa-solid fa-thumbs-up";
+            iconSortByTitle = "Tri des vidéos par j’aime";
+            break;
+    }
+
+    bool userConnected = Models.User.ConnectedUser != null;
+    bool userIsAdmin = userConnected ? Models.User.ConnectedUser.IsAdmin : false;
+    bool userCanWrite = userConnected ? Models.User.ConnectedUser.CanWrite : false;
+
+    string index = RouteConfig.DefaultAction();
+}
+
+<div class="section roundedBorder">
+    <div class="headerMenu">
+        <a class="siteIcon" href="/Medias/list"></a>
+        <div class="pageTitle">@ViewBag.PageTitle</div>
+        @switch (action)
+        {
+            case "login":
+                break;
+            case "subscribe":
+                <div id="mainMenuPanel" class="menu">
+                    <i class="cmdIcon submitCmd fa fa-circle-check" title="Soumettre" onclick="document.getElementById('submit').click()"></i>
+                    <a class="cmdIcon fa fa-square-xmark" title="Annuler" onclick="history.back()"></a>
+                </div>
+                break;
+            case "editprofil":
+                <div id="mainMenuPanel" class="menu">
+                    <i class="cmdIcon submitCmd fa fa-circle-check" title="Soumettre" onclick="document.getElementById('submit').click()"></i>
+                    <a class="cmdIcon fa fa-square-xmark" title="Annuler" onclick="history.back()"></a>
+                </div>
+                break;
+            case "list":
+                <div id="mainMenuPanel" class="menu">
+                    @if (userCanWrite)
+                    {
+                        <a href="/@controller/Create" class="cmdIcon fa fa-circle-plus" title="Ajouter..."></a>
+                    }
+
+                    <a href="/@controller/ToggleMediaSort" class="cmdIcon @iconSortBy" title="@iconSortByTitle"></a>
+
+                    @if (SearchAscending)
+                    {
+                        <a href="/@controller/ToggleSort" id="cmdToggleSearch" class="cmdIcon fa fa-arrow-down-short-wide" title="Tri ascendant..."></a>
+                    }
+                    else
+                    {
+                        <a href="/@controller/ToggleSort" id="cmdToggleSearch" class="cmdIcon fa fa-arrow-up-wide-short" title="Tri descendant..."></a>
+                    }
+
+                    <a href="/@controller/ToggleSearch" id="cmdToggleSearch" class="cmdIcon fa fa-search" title="Recherche..."></a>
+
+                    <div id="menu" class="dropdown ms-auto">
+                        <div data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="cmdIcon fa fa-bars" title="Menu"></i>
+                        </div>
+                        <div class="dropdown-menu noselect" id="DDMenu">
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa fa-address-card"></i>
+                                <a href="/Accounts/EditProfil">Profil...</a>
+                            </div>
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa fa-sign-out"></i>
+                                <a href="/Accounts/Logout">Déconnexion...</a>
+                            </div>
+
+                            @if (userIsAdmin)
+                            {
+                                <div class="dropdown-divider"></div>
+
+                                <div class="dropdown-item item-layout">
+                                    <i class="menuIcon fa fa-users"></i>
+                                    <a href="/Accounts/ManageUsers">Gestion des usagers...</a>
+                                </div>
+                                <div class="dropdown-item item-layout">
+                                    <i class="menuIcon fa fa-calendar-days"></i>
+                                    <a href="/Accounts/LoginsJournal">Historique de connexions...</a>
+                                </div>
+                                <div class="dropdown-item item-layout">
+                                    <i class="menuIcon fa fa-gear"></i>
+                                    <a href="/Accounts/EventsJournal">Journal d'activités...</a>
+                                </div>
+                            }
+
+                            <div class="dropdown-divider"></div>
+
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa @checkSortByDate"></i>
+                                <a href="/Medias/SetMediaSortBy?mediaSortBy=@Models.MediaSortBy.PublishDate">Trier par date</a>
+                            </div>
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa @checkSortByTitle"></i>
+                                <a href="/Medias/SetMediaSortBy?mediaSortBy=@Models.MediaSortBy.Title">Trier par titre</a>
+                            </div>
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa @checkSortByLikes"></i>
+                                <a href="/Medias/SetMediaSortBy?mediaSortBy=@Models.MediaSortBy.Likes">Trier par j’aime</a>
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+
+                            <div class="dropdown-item item-layout">
+                                <i class="menuIcon fa fa-info-circle"></i>
+                                <a href="/@controller/About">À propos...</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                break;
+            case "details":
+                <div id="mainMenuPanel" class="menu">
+                    @if ((bool)Session["UserCanEditCurrentMedia"] && userCanWrite)
+                    {
+                        <a href="/@controller/Edit" class="cmdIcon fa fa-pen-to-square" title="Modifier..."></a>
+                        <i class="cmdIcon fa fa-trash-can"
+                           title="Effacer"
+                           onclick="bootbox.confirm(`<b style=color:red>Effacer le Media : </b><h3>@currentMediaTitle?</h3>`, function(result){ if (result) window.location = '/@controller/Delete'; })">
+                        </i>
+                    }
+                    <a href="/@controller/List" class="cmdIcon fa fa-square-xmark" title="retour"></a>
+                </div>
+                break;
+            case "create":
+                if (userCanWrite)
+                {
+                    <div id="mainMenuPanel" class="menu">
+                        <i class="cmdIcon submitCmd fa fa-circle-check" title="Soumettre" onclick="document.getElementById('submit').click()"></i>
+                        <a href="/@controller/List" class="cmdIcon fa fa-square-xmark" title="Annuler"></a>
+                    </div>
+                }
+                break;
+            case "edit":
+                if (userCanWrite)
+                {
+                    <div id="mainMenuPanel" class="menu">
+                        <i class="cmdIcon submitCmd fa fa-circle-check" title="Soumettre" onclick="document.getElementById('submit').click()"></i>
+                        <a href="/@controller/Details/@currentMediaId" class="cmdIcon fa fa-square-xmark" title="Annuler"></a>
+                    </div>
+                }
+                break;
+            case "loginsjournal":
+            case "eventsjournal":
+            case "manageusers":
+            case "about":
+                <div id="mainMenuPanel" class="menu">
+                    <a href="@index" class="cmdIcon fa fa-square-xmark" title="Retour"></a>
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@if (search && controller == "medias" && action == "list")
+{
+    <div class="flex">
+        <input type="search" id="searchInput" class="section roundedBorder flexItem" value="@searchString" placeholder="Recherche...">
+        <div id="categorySelectPanel" class="flexItem">
+            @{ Html.RenderPartial("GetMediasCategoriesList"); }
+        </div>
+    </div>
+}

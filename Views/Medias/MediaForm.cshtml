@@ -1,0 +1,80 @@
+﻿@model Models.Media
+@{
+    string sharedValue = Model.Shared ? "checked" : "";
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken() <!-- Injection de jeton anti contrefaçon de formulaire -->
+    <fieldset>
+        <legend>Titre</legend>
+        <input id="Title"
+               name="Title"
+               class="form-control"
+               placeholder="Titre"
+               value="@Model.Title"
+               required
+               RequireMessage="Veuillez entrer un titre" />
+    </fieldset>
+    <!-- Category -->
+    <fieldset>
+        <legend>Catégorie</legend>
+        <input type="text"
+               list="Categories"
+               class="form-control Alpha"
+               name="Category"
+               id="Catgory" placeholder="Catégories"
+               value="@Model.Category"
+               required
+               RequireMessage="Veuillez entrer une catégorie"
+               InvalidMessage="La catégorie comporte un caractère illégal"
+               onfocusout="this.value = this.value.trim()" />
+        <datalist id="Categories">
+            @foreach (var category in DAL.DB.Medias.MediasCategories())
+            {
+                <option value="@category">@category</option>
+            }
+        </datalist>
+    </fieldset>
+    <fieldset>
+        <legend> Description </legend>
+        <textarea class="form-control"
+                  name="Description"
+                  id="Description"
+                  placeholder="Description"
+                  style="margin-bottom:8px;"
+                  rows="9"
+                  required
+                  RequireMessage="Veuillez entrer une Description">@Model.Description</textarea>
+    </fieldset>
+    <fieldset>
+        <legend>
+            Id du media Youtube
+            <i class="cmdIconSmall fa fa-info-circle" title="À propos du Id Youtube"
+               onclick="bootbox.alert(
+               `À propos du <b>Id Youtube</b> <hr />
+                Copiez et collez l'URL du vidéo ou uniquement son id. <br /><br />
+                Par exemple : <br />
+                <b>https://www.youtube.com/watch?v=XYZ12345 </b><br />
+                ou <br>
+                <b>XYZ12345</b>`)">
+            </i>
+        </legend>
+        <input id="YoutubeId" name="YoutubeId"
+               class="form-control" placeholder="Id youtube" value="@Model.YoutubeId"
+               required
+               RequireMessage="Veuillez entrer un id du media Youtube"
+               CustomErrorMessage="Cet id est déjà utilisé" />
+        <img id="previewThumbnail" class="mediaThumbnailBig" src="https://img.youtube.com/vi/@Model.YoutubeId/mqdefault.jpg" loading="lazy">
+    </fieldset>
+    <fieldset>
+        <legend>Partage</legend>
+        <div style="text-align:left; display: grid; grid-template-columns:15px 10px auto">
+            <input type="checkbox" name="SharedCB" id="SharedCB" @sharedValue />
+            <label for="SharedCB" style="margin-left:4px">Activé</label>
+        </div>
+    </fieldset>
+    <input id="submit" type="submit" value="Enregistrer" class="btn btn-primary" style="display:none">
+
+}

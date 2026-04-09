@@ -1,0 +1,38 @@
+﻿@{ ViewBag.PageTitle = "À propos de "; }
+<div style="display:flex; align-items:center">
+    <img src="~/WebApp.png" style="width:70px" />
+    <h1>Wikimedia</h1>
+
+</div>
+<dl>
+    <br />
+    <dd style="text-align:justify">
+        Application Web transactionnelle multi-usagers offrant une interface CRUD aux usagers authentifiés pour gérer une liste de vidéos Youtube conservés dans un fichier local au serveur en format JSON.
+        <br /> <br />
+    </dd>
+
+    <dt>
+        <br />
+        Auteur
+    </dt>
+
+    <dd>
+        Louis-Philippe Boucher <br />
+        Étudiant <br />
+        Collège Lionel-Groulx <br />
+    </dd>
+
+    <dt>
+        <br />
+        Date de publication
+    </dt>
+    <dd>
+        31 mars 2026
+    </dd>
+
+    <dt>
+        <br />
+        Nombres d'usagers en ligne : @Models.User.GetOnlineUsers().Count()
+    </dt>
+    
+</dl>

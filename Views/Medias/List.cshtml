@@ -1,0 +1,162 @@
+﻿@{
+    ViewBag.PageTitle = "Wikimedia";
+    string search = Session["Search"] != null ? ((bool)Session["Search"]).ToString() : false.ToString();
+}
+
+<div id="MediaListPanel" class="mediaListLayout"></div>
+
+@section Scripts {
+    <script>
+        let mediasListAutoRefreshPanel = null;
+        let categoriesSelectAutoRefreshPanel = null;
+        let loadMoreTriggerMargin = 10;
+        let pauseScrollEvent = false;
+
+        $(() => {
+            newSession(600);
+
+            mediasListAutoRefreshPanel =
+                new AutoRefreshedPanel(
+                    "MediaListPanel",
+                    "/Medias/GetMedias",
+                    10,
+                    mediasListPostRefresh);
+
+            categoriesSelectAutoRefreshPanel =
+                new AutoRefreshedPanel(
+                    "categorySelectPanel",
+                    "/Medias/GetMediasCategoriesList",
+                    -1,
+                    categoriesSelectPostRefresh);
+
+            let keywordsOnchangeTimer = null;
+            let resizeTimer = null;
+            let resizeEndTriggerDelai = 300;
+
+            $(window).on('resize', function () {
+                mediasListAutoRefreshPanel.pause();
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    setCurrentPageLimit();
+                    mediasListAutoRefreshPanel.restart();
+                    mediasListAutoRefreshPanel.refresh(true);
+                }, resizeEndTriggerDelai);
+            });
+
+            function setCurrentPageLimit() {
+                let nbColumns = 3;
+                let nbRows = 4;
+                let pageSize = nbRows * nbColumns + nbColumns;
+                let mediaLayout = $(".mediaLayout").first();
+
+                if (mediaLayout != null) {
+                    let nbRows = Math.round($("#mainContentPanel").innerHeight() / mediaLayout.outerHeight());
+                    pageSize = nbRows * nbColumns + nbColumns;
+                }
+
+                if (pageSize != NaN)
+                    $.ajax({ url: `/Medias/SetFirstPageSize?pageSize=${pageSize}` });
+            }
+
+            $("#mainContentPanel").scroll(function () {
+                let scrollPanel = $(this);
+                if (!pauseScrollEvent) {
+                    if (scrollPanel.scrollTop() + scrollPanel.outerHeight() >= $("#MediaListPanel").outerHeight() - loadMoreTriggerMargin) {
+                        pauseScrollEvent = true;
+                        $.ajax({
+                            url: "/Medias/getNextMediasPage",
+                            dataType: "html",
+                            success: (htmlContent) => {
+                                mediasListAutoRefreshPanel.appendContent(htmlContent);
+                                pauseScrollEvent = false;
+                            },
+                            statusCode: { 401: this.redirect }
+                        })
+                    }
+                }
+            });
+
+            $("#searchInput").on('keyup', function () {
+                clearTimeout(keywordsOnchangeTimer);
+                keywordsOnchangeTimer = setTimeout(() => {
+                    window.location = "/Medias/SetSearchString?value=" + $("#searchInput").val();
+                }, 1000);
+            });
+
+            $("#searchInput").on('search', function () {
+                clearTimeout(keywordsOnchangeTimer);
+                window.location = "/Medias/SetSearchString?value=" + $("#searchInput").val();
+            });
+
+            $("#searchInput").on("focus", function () {
+                mediasListAutoRefreshPanel.pause();
+            });
+
+            $("#searchInput").on("blur", function () {
+                mediasListAutoRefreshPanel.restart();
+            });
+
+            function mediasListPostRefresh() {
+                categoriesSelectAutoRefreshPanel.refresh(true);
+
+                $(".toggleLikeCmd").off();
+                $(".toggleLikeCmd").click(function (e) {
+                    mediasListAutoRefreshPanel.command("/Medias/ToggleMediaLike/" + $(this).attr("mediaId"));
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                $(".mediaThumbnail").off();
+                $(".mediaThumbnail").on("click", function () {
+                    let scrollPanel = $("#mainContentPanel");
+                    sessionStorage.setItem("previousScrollPosition", scrollPanel.scrollTop());
+                });
+
+                let scrollPanel = $("#mainContentPanel");
+                let scrollPos = sessionStorage.getItem("previousScrollPosition");
+                let RestoreScrollPosition = sessionStorage.getItem("RestoreScrollPosition");
+                if (RestoreScrollPosition != null && scrollPos != null) {
+                    scrollPanel.scrollTop(parseInt(scrollPos));
+                }
+                sessionStorage.clear("RestoreScrollPosition");
+                highlightKeyword();
+            }
+
+            function highlightKeyword() {
+                if ("@search" == "True") {
+                    let keyword = $("#searchInput").val();
+                    if (keyword.length > 0) {
+                        let titles = document.getElementsByClassName('mediaTitle');
+                        Array.from(titles).forEach(title => {
+                            highlight(keyword, title);
+                        });
+                    }
+                }
+            }
+
+            function categoriesSelectPostRefresh() {
+                $("#categorySelect").off();
+                $("#categorySelect").on("focus", function () {
+                    mediasListAutoRefreshPanel.pause();
+                });
+                $("#categorySelect").on("blur", function () {
+                    mediasListAutoRefreshPanel.restart();
+                });
+                $("#categorySelect").on('change', function () {
+                    window.location = "/Medias/SetSearchCategory?value=" + $("#categorySelect").val();
+                });
+
+                $("#ownerSelect").off();
+                $("#ownerSelect").on("focus", function () {
+                    mediasListAutoRefreshPanel.pause();
+                });
+                $("#ownerSelect").on("blur", function () {
+                    mediasListAutoRefreshPanel.restart();
+                });
+                $("#ownerSelect").on('change', function () {
+                    window.location = "/Medias/SetSearchOwner?value=" + $("#ownerSelect").val();
+                });
+            }
+        })
+    </script>
+}

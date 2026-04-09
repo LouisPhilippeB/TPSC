@@ -1,0 +1,46 @@
+﻿@model Models.Media
+@{
+    ViewBag.PageTitle = "Détails";
+    string search = Session["Search"] != null ? ((bool)Session["Search"]).ToString() : false.ToString();
+    string SearchString = Session["SearchString"] != null ? (string)Session["SearchString"] : "";
+}
+
+<div id="detailsPanel" class="detailsPanel"></div>
+
+@section Scripts {
+    <script>
+        let mediaDetails_ARP = null;
+
+        $(() => {
+            newSession(600);
+            mediaDetails_ARP = new AutoRefreshedPanel("detailsPanel", "/Medias/GetMediaDetails", 5, mediaDetailsPostRefresh);
+            sessionStorage.setItem("RestoreScrollPosition", "1");
+        })
+
+        function mediaDetailsPostRefresh() {
+            $(".toggleLikeCmd").off();
+            $(".toggleLikeCmd").click(function (e) {
+                mediaDetails_ARP.command("/Medias/ToggleMediaLike/" + $(this).attr("mediaId"));
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            highlightKeyword();
+        }
+
+        function highlightKeyword() {
+            if ("@search" == "True") {
+                let keyword = "@SearchString";
+                if (keyword.length > 0) {
+                    let titles = document.getElementsByClassName('mediaTitle');
+                    Array.from(titles).forEach(title => {
+                        highlight(keyword, title);
+                    });
+                    let descriptions = document.getElementsByClassName('mediaDescription');
+                    Array.from(descriptions).forEach(description => {
+                        highlight(keyword, description);
+                    })
+                }
+            }
+        }
+    </script>
+}

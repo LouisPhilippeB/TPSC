@@ -1,0 +1,47 @@
+﻿@model IEnumerable<Models.Media>
+
+@{
+    if (Model.Count() != 0)
+    {
+        int connectedId = Models.User.ConnectedUser.Id;
+        foreach (var media in Model)
+        {
+            bool writeAccess = Models.User.ConnectedUser.IsAdmin || media.OwnerId == connectedId;
+            string likeIcon = media.ConnectedUserLikesIt ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+
+            <div class="mediaLayout">
+                <a href="/Medias/Details/@media.Id" title="Voir les détails de @media.Title" style="text-decoration:none; width:100% !important">
+                    <div class="mediaThumbnail"
+                         style="background-image:url('https://img.youtube.com/vi/@media.YoutubeId/mqdefault.jpg'); padding:6px; display:flex; flex-flow:row-reverse ">
+                        @if (media.Owner != null)
+                        {
+                            <div class="UserSmallAvatar transparentBackground"
+                                 style="background-image: url('@media.Owner.Avatar'); border:0.1px solid white;"
+                                 title="Ajouté par @media.Owner.Name"></div>
+                        }
+                        @if (writeAccess && media.Shared)
+                        {
+                            <div class="UserSmallAvatar transparentBackground" style="background-image: url('/Content/UI-Images/shared.png'); margin-right:6px;" title="partagée"></div>
+                        }
+                    </div>
+                </a>
+
+                <div class="mediaTitle ellipsis" style="margin-left:4px; margin-right:4px; font-size:0.8em; font-weight:bold">
+                    @media.Title
+                </div>
+
+                <div style="display:grid; grid-template-columns:auto auto; align-items:center; margin:4px">
+                    <div style="color:gray; font-size:0.65em">
+                        @media.Category @Helper.When(media.PublishDate)
+                    </div>
+                    <div style="text-align:right; font-size:0.85em">
+                        <span title="@media.LikesToolTip" style="margin-right:6px">@media.LikesCount</span>
+                        <a href="#" class="toggleLikeCmd" mediaId="@media.Id" title="J’aime" style="text-decoration:none; color:inherit">
+                            <i class="@likeIcon"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}

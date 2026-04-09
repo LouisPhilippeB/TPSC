@@ -1,0 +1,43 @@
+﻿@{
+    var connectedUser = Models.User.ConnectedUser;
+    var categories = DAL.DB.Medias.MediasCategories();
+    string selectedCategory = Session["SelectedCategory"] != null ? (string)Session["SelectedCategory"] : "";
+    string selectedOwnerId = Session["SelectedOwnerId"] != null ? Session["SelectedOwnerId"].ToString() : "0";
+
+    var visibleMedias = DAL.DB.Medias.ToList();
+    if (!connectedUser.IsAdmin)
+    {
+        visibleMedias = visibleMedias.Where(m => m.Shared || m.OwnerId == connectedUser.Id).ToList();
+    }
+
+    var owners = visibleMedias
+        .GroupBy(m => m.OwnerId)
+        .Select(g => new
+        {
+            Owner = DAL.DB.Users.Get(g.Key),
+            Count = g.Count()
+        })
+        .Where(x => x.Owner != null)
+        .OrderBy(x => x.Owner.Name)
+        .ToList();
+}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+    <select id="categorySelect" class="form-control">
+        <option value="" selected>Toutes les catégories</option>
+        @foreach (var category in categories)
+        {
+            string selected = selectedCategory == category ? "selected" : "";
+            <option value="@category" @selected>@category</option>
+        }
+    </select>
+
+    <select id="ownerSelect" class="form-control">
+        <option value="0" selected>Tous les usagers</option>
+        @foreach (var owner in owners)
+        {
+            string selected = selectedOwnerId == owner.Owner.Id.ToString() ? "selected" : "";
+            <option value="@owner.Owner.Id" @selected>@owner.Owner.Name (@owner.Count)</option>
+        }
+    </select>
+</div>

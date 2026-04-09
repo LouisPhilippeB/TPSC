@@ -1,0 +1,65 @@
+﻿@model Models.Media
+
+@if (Model != null)
+{
+    int connectedId = Models.User.ConnectedUser.Id;
+    bool isVisible = Model.Shared || Models.User.ConnectedUser.IsAdmin || Model.OwnerId == connectedId;
+    string likeIcon = Model.ConnectedUserLikesIt ? "fa-solid fa-thumbs-up" : "fa-regular fa-thumbs-up";
+
+    if (isVisible)
+    {
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:8px">
+            <span title="@Model.LikesToolTip">@Model.LikesCount</span>
+            <a href="#" class="toggleLikeCmd" mediaId="@Model.Id" title="J’aime" style="text-decoration:none; color:inherit">
+                <i class="@likeIcon"></i>
+            </a>
+        </div>
+
+        <dl>
+            <dd>
+                @if ((Models.User.ConnectedUser.Id == Model.OwnerId || Models.User.ConnectedUser.IsAdmin) && Model.Shared)
+                {
+                    <span style="color:grey">[Partagé]</span>
+                }
+            </dd>
+            <dd class="mediaTitle">
+                @Model.Title
+            </dd>
+            <dd>
+                @Helper.YoutubePlayer(Model.YoutubeId)
+            </dd>
+            <dd class="mediaDescription description">
+                @Model.Description
+            </dd>
+            <dt>
+                Catégorie
+            </dt>
+            <dd>
+                @Model.Category
+            </dd>
+            <dt>
+                Date de publication
+            </dt>
+            <dd>
+                @Helper.When(Model.PublishDate)
+            </dd>
+            <dt>
+                Ajouté par
+            </dt>
+            <dd class="owner" ownerid="@Model.OwnerId">
+                @if (Model.Owner != null)
+                {
+                    @Helper.AvatarUser(Model.Owner)
+                }
+            </dd>
+        </dl>
+    }
+    else
+    {
+        <h2 style="color:red">Cette vidéo n'est plus partagée...</h2>
+    }
+}
+else
+{
+    <h2 style="color:red">Cette vidéo a été effacée...</h2>
+}
